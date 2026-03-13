@@ -1,0 +1,322 @@
+---
+title: 'PWA Capabilities'
+description: 'Install and use the CO2 Monitor as a Progressive Web App on any device'
+---
+
+The CO2 Monitor is built as a Progressive Web App (PWA), enabling users to install it on their devices and use it like a native application. This provides offline capabilities, home screen installation, and an app-like experience across desktop and mobile platforms.
+
+## What is a PWA?
+
+A Progressive Web App combines the best features of web and native applications:
+
+- **Installable**: Add to home screen on mobile or desktop
+- **App-Like Experience**: Runs in a standalone window without browser UI
+- **Fast Loading**: Optimized assets and caching strategies
+- **Responsive**: Works seamlessly on any screen size
+- **Discoverable**: Can be found through search engines like any website
+
+<Info>
+PWAs are built using standard web technologies (HTML, CSS, JavaScript) but deliver functionality previously available only to native apps.
+</Info>
+
+## PWA Manifest Configuration
+
+The application's PWA capabilities are defined in the `manifest.json` file:
+
+```json
+{
+  "short_name": "CO2 Monitor",
+  "name": "Sistema de Monitoreo de CO2",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "version": "1.0.0"
+}
+```
+
+### Manifest Properties Explained
+
+<Accordion title="short_name">
+**Value**: `"CO2 Monitor"`
+
+The name displayed on the user's home screen after installation. Limited to 12 characters or less to fit on mobile screens without truncation.
+</Accordion>
+
+<Accordion title="name">
+**Value**: `"Sistema de Monitoreo de CO2"`
+
+The full application name displayed during installation and in app settings. This can be longer and more descriptive than the short name.
+</Accordion>
+
+<Accordion title="icons">
+The app provides three icon sizes to ensure crisp display across all devices:
+
+- **favicon.ico**: Multi-size icon (16x16, 24x24, 32x32, 64x64) for browser tabs and bookmarks
+- **logo192.png**: 192x192 icon for mobile home screens
+- **logo512.png**: 512x512 high-resolution icon for splash screens and larger displays
+</Accordion>
+
+<Accordion title="start_url">
+**Value**: `"."`
+
+Defines which URL to load when the app is launched. The relative path `"."` starts at the app's root.
+</Accordion>
+
+<Accordion title="display">
+**Value**: `"standalone"`
+
+Controls how the app appears when launched:
+- **standalone**: Opens in a full-screen window without browser UI (recommended)
+- Other options: `fullscreen`, `minimal-ui`, `browser`
+</Accordion>
+
+<Accordion title="theme_color">
+**Value**: `"#000000"`
+
+The color of the browser toolbar and app header. Black (#000000) provides a professional, minimalist appearance.
+</Accordion>
+
+<Accordion title="background_color">
+**Value**: `"#ffffff"`
+
+The background color shown on the splash screen while the app loads. White (#ffffff) matches the app's clean design.
+</Accordion>
+
+<Accordion title="version">
+**Value**: `"1.0.0"`
+
+Tracks the application version for updates and maintenance.
+</Accordion>
+
+## HTML Configuration
+
+The `index.html` file includes essential PWA metadata and links:
+
+```html
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description"
+      content="Sistema de monitoreo de CO2 para invernaderos. Monitorea los niveles de CO2 en tiempo real para un ambiente saludable y controlado. Mantén la calidad del aire en óptimas condiciones para tus cultivos." />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>CO2</title>
+</head>
+```
+
+### Key Meta Tags
+
+<CardGroup cols={2}>
+  <Card title="viewport" icon="mobile">
+    Ensures proper rendering and touch zooming on mobile devices
+  </Card>
+  <Card title="theme-color" icon="palette">
+    Sets the toolbar color in mobile browsers and PWA mode
+  </Card>
+  <Card title="description" icon="file-lines">
+    Provides SEO-friendly description for search engines and social sharing
+  </Card>
+  <Card title="apple-touch-icon" icon="apple">
+    Special icon for iOS devices when added to home screen
+  </Card>
+</CardGroup>
+
+<Note>
+The `%PUBLIC_URL%` placeholder is automatically replaced with the correct path during the build process by Create React App.
+</Note>
+
+## Installing the PWA
+
+### On Desktop (Chrome, Edge, Brave)
+
+1. Navigate to the CO2 Monitor website
+2. Look for the install icon in the address bar (⊕ or computer icon)
+3. Click the install prompt
+4. Confirm installation in the dialog box
+5. The app opens in a standalone window and is added to your applications menu
+
+<Tip>
+Alternatively, click the three-dot menu → "Install CO2 Monitor" or "Apps" → "Install this site as an app"
+</Tip>
+
+### On Android
+
+1. Open the site in Chrome or compatible browser
+2. Tap the three-dot menu
+3. Select "Add to Home screen" or "Install app"
+4. Confirm the installation
+5. The app icon appears on your home screen
+
+### On iOS (iPhone/iPad)
+
+1. Open the site in Safari
+2. Tap the Share button (square with arrow)
+3. Scroll and select "Add to Home Screen"
+4. Edit the name if desired
+5. Tap "Add"
+
+<Note>
+iOS has limited PWA support compared to Android and desktop. Some features like background sync may not be available, but core functionality including real-time monitoring works perfectly.
+</Note>
+
+## Responsive Design
+
+The CO2 Monitor features responsive design that adapts to any screen size, making it perfect for PWA usage across devices.
+
+### Breakpoint Strategy
+
+**Desktop (>768px):**
+```css
+.dashboard h1 { font-size: 2em; }
+.chart-container { height: 400px; max-width: 1000px; }
+```
+
+**Tablet (≤768px):**
+```css
+.dashboard h1 { font-size: 2em; }
+.chart-container { height: 300px; }
+```
+
+**Mobile (≤480px):**
+```css
+.dashboard h2 { font-size: 1.2em; }
+.dashboard h1 { font-size: 1.5em; }
+.chart-container { height: 250px; }
+```
+
+### Responsive Features
+
+- **Flexible Layouts**: Content reflows naturally on smaller screens
+- **Touch-Friendly**: All interactive elements are appropriately sized for touch input
+- **Readable Text**: Font sizes scale down proportionally while maintaining readability
+- **Optimized Charts**: Chart height adjusts to prevent scrolling on mobile devices
+- **Portrait/Landscape**: Works in both orientations on mobile devices
+
+## Offline Capabilities
+
+While the current implementation focuses on real-time monitoring requiring an active connection, the PWA infrastructure is in place for future offline enhancements:
+
+### Service Worker Ready
+
+The app is built with Create React App, which includes service worker support. To enable offline caching:
+
+1. Register the service worker in `src/index.js`
+2. Configure caching strategies for static assets
+3. Implement offline fallback pages
+
+<Info>
+For a real-time monitoring application, true offline functionality is limited since fresh data requires network connectivity. However, the app shell (UI, charts, styles) can be cached for instant loading.
+</Info>
+
+### Network Resilience
+
+The current implementation includes error handling for network issues:
+
+```javascript
+try {
+    const response = await axios.get("https://co2-api.vercel.app/api/co2");
+    // ... process data
+} catch (error) {
+    console.error("Error fetching CO2 data:", error);
+}
+```
+
+The app continues running even when API requests fail, providing a degraded but functional experience.
+
+## App Icons and Branding
+
+### Icon Requirements
+
+The PWA includes multiple icon sizes to meet platform requirements:
+
+| File | Size | Purpose |
+|------|------|---------|
+| favicon.ico | 16x16, 24x24, 32x32, 64x64 | Browser tabs, bookmarks |
+| logo192.png | 192x192 | Android home screen, app drawer |
+| logo512.png | 512x512 | Splash screens, high-DPI displays |
+
+<Tip>
+When creating custom icons, ensure they:
+- Use simple, recognizable designs that work at small sizes
+- Have good contrast against various backgrounds
+- Include appropriate padding (safe zone) to prevent clipping
+- Export as PNG with transparency for flexibility
+</Tip>
+
+### Splash Screen
+
+On mobile devices, the PWA displays a splash screen during app launch, generated from:
+- The largest icon (logo512.png)
+- The app name from manifest.json
+- The background_color setting
+
+This creates a professional first impression while the app loads.
+
+## Performance Benefits
+
+PWAs offer significant performance advantages:
+
+<CardGroup cols={2}>
+  <Card title="Faster Loading" icon="bolt">
+    Cached assets load instantly on repeat visits
+  </Card>
+  <Card title="Reduced Data Usage" icon="database">
+    Only new data is fetched, not entire pages
+  </Card>
+  <Card title="Background Updates" icon="arrows-rotate">
+    Can pre-fetch data when network is available
+  </Card>
+  <Card title="Native Feel" icon="mobile-screen">
+    Standalone window without browser chrome
+  </Card>
+</CardGroup>
+
+## Use Cases for PWA Installation
+
+Installing the CO2 Monitor as a PWA is ideal for:
+
+- **Greenhouse Operators**: Quick access from home screen without opening browser
+- **Mobile Monitoring**: Easier to check CO2 levels while working in the field
+- **Dedicated Display**: Run on a tablet mounted in the greenhouse
+- **Multi-Window Workflows**: Open alongside other applications on desktop
+- **Kiosk Mode**: Display on a dedicated monitoring station
+- **Reduced Distractions**: No browser tabs or bookmarks to navigate
+
+<Note>
+Even without installation, the app works perfectly as a regular website. Installation is optional but provides a more focused, app-like experience.
+</Note>
+
+## Future PWA Enhancements
+
+The PWA foundation enables future capabilities:
+
+- **Push Notifications**: Alert users when CO2 levels exceed thresholds
+- **Background Sync**: Queue data updates when offline and sync when reconnected
+- **Offline Data Storage**: Cache historical readings for offline viewing
+- **Sharing**: Use Web Share API to share screenshots or data
+- **Credentials**: Store API keys securely with Web Authentication API
+- **File System Access**: Export CO2 data directly to device storage
+
+<Tip>
+The Progressive in PWA means continuous improvement. New browser capabilities can be added over time without requiring app store updates.
+</Tip>

@@ -1,0 +1,183 @@
+---
+title: 'Real-Time Monitoring'
+description: 'Track CO2 levels in your greenhouse with automatic 5-second updates'
+---
+
+The CO2 Monitor application provides real-time monitoring of carbon dioxide levels in greenhouse environments, automatically fetching fresh data every 5 seconds to ensure you always have the most current readings.
+
+## How It Works
+
+The real-time monitoring system uses a polling mechanism that continuously fetches CO2 data from the backend API at regular intervals. This ensures your dashboard always displays the latest environmental conditions without requiring manual page refreshes.
+
+### 5-Second Refresh Interval
+
+The application implements automatic data fetching using React's `useEffect` hook with a 5-second interval:
+
+```javascript
+useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const response = await axios.get("https://co2-api.vercel.app/api/co2");
+            const { co2, timestamp } = response.data;
+
+            console.log("Nuevo dato recibido:", { timestamp, co2 });
+
+            setLatestCO2(co2);
+            setCo2Data((prevData) => {
+                const newData = [...prevData, co2];
+                if (newData.length > 10) newData.shift();
+                return newData;
+            });
+
+            setTimestamps((prevTimestamps) => {
+                const newTimestamps = [...prevTimestamps, formatTime(timestamp)];
+                if (newTimestamps.length > 10) newTimestamps.shift();
+                return newTimestamps;
+            });
+        } catch (error) {
+            console.error("Error fetching CO2 data:", error);
+        }
+    };
+
+    const intervalId = setInterval(fetchData, 5000);
+    return () => clearInterval(intervalId);
+}, []);
+```
+
+<Note>
+The cleanup function `clearInterval(intervalId)` is crucial for preventing memory leaks when the component unmounts. This ensures the polling stops when users navigate away from the dashboard.
+</Note>
+
+### API Endpoint
+
+The application fetches CO2 data from the following endpoint:
+
+```
+https://co2-api.vercel.app/api/co2
+```
+
+**Response Format:**
+```json
+{
+  "co2": 450,
+  "timestamp": "13/03/26, 02:30 p.m."
+}
+```
+
+<Info>
+The API returns CO2 measurements in parts per million (ppm) along with a formatted timestamp indicating when the reading was taken.
+</Info>
+
+## State Management
+
+The CO2Dashboard component manages three key pieces of state to handle real-time monitoring:
+
+### 1. Latest CO2 Value
+
+```javascript
+const [latestCO2, setLatestCO2] = useState(null);
+```
+
+This state holds the most recent CO2 reading and is prominently displayed at the top of the dashboard. When data is being fetched for the first time, it shows "Cargando..." (Loading...).
+
+**Display Implementation:**
+```javascript
+<h2>Medición en Tiempo Real</h2>
+<h1>{latestCO2 ? `${latestCO2} ppm` : "Cargando..."}</h1>
+```
+
+### 2. Historical CO2 Data
+
+```javascript
+const [co2Data, setCo2Data] = useState([]);
+```
+
+This array stores the last 10 CO2 readings for visualization in the chart. The rolling window implementation automatically removes the oldest value when the 11th data point arrives:
+
+```javascript
+setCo2Data((prevData) => {
+    const newData = [...prevData, co2];
+    if (newData.length > 10) newData.shift();
+    return newData;
+});
+```
+
+<Tip>
+The 10-point rolling window provides a good balance between showing recent trends and maintaining chart readability without overwhelming the display with too much data.
+</Tip>
+
+### 3. Timestamp Tracking
+
+```javascript
+const [timestamps, setTimestamps] = useState([]);
+```
+
+Parallel to the CO2 data array, this state maintains formatted timestamps for each reading. These timestamps are used as labels on the X-axis of the chart.
+
+**Time Formatting:**
+
+The application includes a sophisticated `formatTime` function that converts the API's timestamp format into a localized time display:
+
+```javascript
+const formatTime = (timestamp) => {
+    const [datePart, timePartWithPeriod] = timestamp.split(", ");
+    const [day, month, year] = datePart.split("/");
+    const [timePart, period] = timePartWithPeriod.split(" ");
+    let [hours, minutes] = timePart.split(":");
+    if (period.toLowerCase() === "p.m." && hours !== "12") {
+        hours = parseInt(hours) + 12;
+    } else if (period.toLowerCase() === "a.m." && hours === "12") {
+        hours = "00";
+    }
+    const isoDate = `20${year}-${month}-${day}T${hours}:${minutes}:00`;
+    const date = new Date(isoDate);
+    if (isNaN(date)) {
+        console.error("Fecha no válida:", timestamp);
+        return "Invalid Date";
+    }
+    return date.toLocaleTimeString('es-MX', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+};
+```
+
+## Error Handling
+
+The real-time monitoring system includes robust error handling to gracefully manage network issues or API failures:
+
+```javascript
+try {
+    const response = await axios.get("https://co2-api.vercel.app/api/co2");
+    // ... process data
+} catch (error) {
+    console.error("Error fetching CO2 data:", error);
+}
+```
+
+<Note>
+When an error occurs, the application logs it to the console but continues polling. This ensures temporary network issues don't break the monitoring experience.
+</Note>
+
+## Performance Considerations
+
+The 5-second polling interval strikes a balance between:
+
+- **Data freshness**: Updates are frequent enough for real-time decision making
+- **Server load**: Requests are spaced out to avoid overwhelming the API
+- **User experience**: The dashboard feels responsive without causing visual fatigue from too-frequent updates
+
+<Tip>
+If you need to adjust the polling frequency, modify the interval value in `setInterval(fetchData, 5000)`. The value is in milliseconds (5000ms = 5 seconds).
+</Tip>
+
+## Use Cases
+
+Real-time monitoring is essential for:
+
+- **Greenhouse Management**: Quickly identify when CO2 levels drop below optimal ranges for plant growth
+- **Environmental Control**: Respond immediately to ventilation or CO2 injection system issues
+- **Data Analysis**: Observe how CO2 levels change throughout the day in response to plant activity and environmental conditions
+- **Alert Systems**: Set up monitoring dashboards that can trigger alerts when values exceed safe thresholds

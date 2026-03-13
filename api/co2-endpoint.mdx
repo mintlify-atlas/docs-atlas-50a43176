@@ -1,0 +1,207 @@
+---
+title: 'CO2 Endpoint'
+description: 'Real-time CO2 data retrieval endpoint for greenhouse monitoring'
+---
+
+## Overview
+
+The CO2 Monitor application connects to a real-time CO2 monitoring API that provides current CO2 levels and timestamps for greenhouse environments. This endpoint is polled at regular intervals to maintain up-to-date readings.
+
+## Endpoint
+
+<ParamField path="GET" type="string">
+  https://co2-api.vercel.app/api/co2
+</ParamField>
+
+### Base URL
+```
+https://co2-api.vercel.app
+```
+
+### Path
+```
+/api/co2
+```
+
+## Request
+
+### Method
+`GET`
+
+### Headers
+No special headers are required for this public endpoint.
+
+### Authentication
+This endpoint does not require authentication.
+
+## Example Requests
+
+<CodeGroup>
+
+```javascript Axios (React)
+import axios from "axios";
+
+const response = await axios.get("https://co2-api.vercel.app/api/co2");
+const { co2, timestamp } = response.data;
+
+console.log("CO2 Level:", co2);
+console.log("Timestamp:", timestamp);
+```
+
+```bash cURL
+curl -X GET "https://co2-api.vercel.app/api/co2"
+```
+
+```javascript Fetch API
+const response = await fetch("https://co2-api.vercel.app/api/co2");
+const data = await response.json();
+console.log(data);
+```
+
+</CodeGroup>
+
+## Response
+
+### Success Response
+
+<ResponseField name="co2" type="number" required>
+  The current CO2 concentration measured in parts per million (ppm). This is a numeric value representing the real-time CO2 level in the monitored greenhouse environment.
+</ResponseField>
+
+<ResponseField name="timestamp" type="string" required>
+  The timestamp when the CO2 reading was taken, formatted as: `DD/MM/YY, HH:MM A.M./P.M.`
+  
+  Example: `13/03/26, 10:30 A.M.`
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "co2": 450,
+  "timestamp": "13/03/26, 10:30 A.M."
+}
+```
+
+<Note>
+The timestamp format uses a 12-hour clock with A.M./P.M. periods and a two-digit year format.
+</Note>
+
+## Implementation in CO2Dashboard
+
+The application implements automatic polling of this endpoint using React's `useEffect` hook:
+
+```javascript
+useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const response = await axios.get("https://co2-api.vercel.app/api/co2");
+            const { co2, timestamp } = response.data;
+
+            setLatestCO2(co2);
+            setCo2Data((prevData) => {
+                const newData = [...prevData, co2];
+                if (newData.length > 10) newData.shift();
+                return newData;
+            });
+
+            setTimestamps((prevTimestamps) => {
+                const newTimestamps = [...prevTimestamps, formatTime(timestamp)];
+                if (newTimestamps.length > 10) newTimestamps.shift();
+                return newTimestamps;
+            });
+        } catch (error) {
+            console.error("Error fetching CO2 data:", error);
+        }
+    };
+
+    const intervalId = setInterval(fetchData, 5000);
+    return () => clearInterval(intervalId);
+}, []);
+```
+
+**Source:** `src/components/CO2Dashboard.js:38-65`
+
+## Error Handling
+
+### Client-Side Error Handling
+
+The application implements basic error handling for failed requests:
+
+```javascript
+try {
+    const response = await axios.get("https://co2-api.vercel.app/api/co2");
+    const { co2, timestamp } = response.data;
+    // Process data...
+} catch (error) {
+    console.error("Error fetching CO2 data:", error);
+}
+```
+
+<Expandable title="Common Error Scenarios">
+
+**Network Errors**
+- Connection timeouts
+- DNS resolution failures
+- Network unavailability
+
+**Server Errors**
+- 500 Internal Server Error
+- 503 Service Unavailable
+- Rate limiting (if implemented)
+
+**Client Errors**
+- CORS issues (handled by the API)
+- Invalid request format
+
+When an error occurs, the application logs it to the console and continues attempting to fetch data on the next interval.
+
+</Expandable>
+
+## Polling Configuration
+
+### Refresh Interval
+
+The application polls the endpoint every **5 seconds** (5000 milliseconds):
+
+```javascript
+const intervalId = setInterval(fetchData, 5000);
+```
+
+<Note>
+This refresh rate ensures near real-time monitoring while balancing server load and network usage. The interval can be adjusted based on your monitoring requirements.
+</Note>
+
+### Data Retention
+
+The application maintains a rolling window of the **last 10 data points** for chart visualization:
+
+```javascript
+if (newData.length > 10) newData.shift();
+```
+
+## Rate Limits
+
+<Note>
+The API does not publicly document specific rate limits. The application uses a 5-second polling interval which is conservative and suitable for production use.
+</Note>
+
+## Response Time
+
+Typical response times are under 500ms, making the endpoint suitable for real-time monitoring applications.
+
+## CORS Configuration
+
+The API is configured to allow cross-origin requests from web applications, enabling browser-based clients to fetch data directly without a proxy server.
+
+## Best Practices
+
+1. **Implement Error Boundaries**: Wrap API calls in try-catch blocks
+2. **Use Intervals Wisely**: Clean up intervals on component unmount
+3. **Cache Recent Data**: Maintain local state to show last known values during network issues
+4. **Validate Response Data**: Check that both `co2` and `timestamp` fields exist before processing
+5. **Handle Disconnections**: Provide user feedback if multiple consecutive requests fail
+
+## Related Documentation
+
+- [Data Format](/api/data-format) - Detailed documentation on response structure and timestamp parsing

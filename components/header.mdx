@@ -1,0 +1,138 @@
+---
+title: 'Header'
+description: 'Application header component displaying the system title'
+---
+
+## Overview
+
+The `Header` component is a simple, stateless React component that displays the application title at the top of the page. It provides consistent branding across the CO2 monitoring application.
+
+## Component Code
+
+The complete component is located at `src/components/Header.js`:
+
+```javascript
+import React from "react";
+import './Header.css';
+
+function Header() {
+    return (
+        <header>
+            <h1 className="titulo">Sistema de Monitoreo de CO2</h1>
+        </header>
+    );
+}
+
+export default Header;
+```
+
+## Component Structure
+
+<ParamField path="Element" type="header">
+  Uses the semantic HTML5 `<header>` element for proper document structure and accessibility.
+</ParamField>
+
+<ParamField path="Title" type="h1">
+  Contains a single `h1` heading with the text "Sistema de Monitoreo de CO2" (CO2 Monitoring System in Spanish).
+</ParamField>
+
+<ParamField path="CSS Class" type="titulo">
+  The heading uses the `titulo` class for custom styling defined in `Header.css`.
+</ParamField>
+
+## Features
+
+<Card title="Simple and Lightweight" icon="feather">
+  The Header component has no props, no state, and no side effects. It's a pure presentational component focused solely on displaying the application title.
+</Card>
+
+<Card title="Semantic HTML" icon="code">
+  Uses the `<header>` semantic element, which helps screen readers and search engines understand the page structure.
+</Card>
+
+<Card title="Styled with CSS" icon="paintbrush">
+  Styling is handled through an external CSS file (`Header.css`), keeping the component logic clean and maintainable.
+</Card>
+
+## Usage
+
+The Header component is imported and rendered at the top of the main App component:
+
+```javascript
+import React from "react";
+import Header from "./components/Header";
+import CO2Dashboard from "./components/CO2Dashboard";
+import "./styles.css";
+
+function App() {
+  return (
+    <div>
+      <Header />
+      <CO2Dashboard />
+    </div>
+  );
+}
+
+export default App;
+```
+
+<Note>
+The Header is rendered before the CO2Dashboard component to ensure it appears at the top of the page.
+</Note>
+
+## Styling Approach
+
+The component uses a separate CSS file (`Header.css`) for styling. This follows React best practices for component-level styling:
+
+- **Separation of Concerns**: Keeps JSX focused on structure while CSS handles presentation
+- **Maintainability**: Makes it easy to update styles without modifying component logic
+- **Reusability**: The `titulo` class can be referenced or extended in other stylesheets
+
+<Tip>
+To customize the header appearance, modify the styles in `src/components/Header.css`. Common customizations include changing font size, color, background, padding, and text alignment.
+</Tip>
+
+## Component Props
+
+The Header component does not accept any props. It always renders the same content.
+
+<ParamField path="props" type="none">
+  This component has no configurable properties.
+</ParamField>
+
+## Accessibility
+
+The component follows accessibility best practices:
+
+- Uses semantic `<header>` element
+- Contains an `<h1>` heading, which is appropriate as the main title of the application
+- Text is readable and can be styled for contrast in the CSS file
+
+## Extension Ideas
+
+While the current implementation is simple, you could extend it with:
+
+<Card title="Dynamic Title" icon="text">
+  Accept a `title` prop to make the component reusable across different applications:
+  ```javascript
+  function Header({ title }) {
+      return (
+          <header>
+              <h1 className="titulo">{title}</h1>
+          </header>
+      );
+  }
+  ```
+</Card>
+
+<Card title="Navigation Menu" icon="bars">
+  Add navigation links or menu buttons for multi-page applications.
+</Card>
+
+<Card title="Status Indicator" icon="circle-dot">
+  Display connection status or last update time in the header.
+</Card>
+
+<Card title="Theme Toggle" icon="moon">
+  Add a button to switch between light and dark themes.
+</Card>

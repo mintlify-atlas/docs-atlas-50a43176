@@ -1,0 +1,457 @@
+---
+title: "Environment Configuration"
+description: "Configure development and production environments for your CO2 Monitor application"
+---
+
+## Overview
+
+CO2 Monitor is built with Create React App, which provides a robust development environment with built-in configuration for building, testing, and deploying React applications. This page covers the available environments, npm scripts, and browser compatibility settings.
+
+## Project Structure
+
+The application was bootstrapped with Create React App, providing a standardized React development environment without the need for complex build configuration.
+
+<Info>
+Create React App uses webpack, Babel, and ESLint under the hood, but abstracts away the configuration complexity.
+</Info>
+
+## Available NPM Scripts
+
+The following scripts are defined in `package.json` and control the application lifecycle:
+
+### Development
+
+```bash
+npm start
+```
+
+Starts the development server with hot module replacement (HMR):
+- Opens the application at `http://localhost:3000`
+- Automatically reloads when you save changes to source files
+- Displays build errors and warnings in the console and browser
+- Enables React Developer Tools integration
+
+<CodeGroup>
+
+```json package.json
+{
+  "scripts": {
+    "start": "react-scripts start"
+  }
+}
+```
+
+```bash Terminal output
+Compiled successfully!
+
+You can now view sistema-de-co2 in the browser.
+
+  Local:            http://localhost:3000
+  On Your Network:  http://192.168.1.100:3000
+
+Note that the development build is not optimized.
+To create a production build, use npm run build.
+```
+
+</CodeGroup>
+
+### Production Build
+
+```bash
+npm run build
+```
+
+Creates an optimized production build in the `build` folder:
+- Bundles React in production mode
+- Optimizes the build for best performance
+- Minifies JavaScript and CSS files
+- Hashes filenames for optimal caching
+- Generates a service worker for PWA functionality
+
+<CodeGroup>
+
+```json package.json
+{
+  "scripts": {
+    "build": "react-scripts build"
+  }
+}
+```
+
+```bash Build output structure
+build/
+├── static/
+│   ├── css/
+│   │   └── main.[hash].css
+│   ├── js/
+│   │   ├── main.[hash].js
+│   │   └── [number].[hash].chunk.js
+│   └── media/
+├── index.html
+├── manifest.json
+└── service-worker.js
+```
+
+</CodeGroup>
+
+<Note>
+The production build is optimized and minified. Files are hashed to enable long-term caching strategies.
+</Note>
+
+### Testing
+
+```bash
+npm test
+```
+
+Launches the test runner in interactive watch mode:
+- Runs tests using Jest
+- Watches for file changes and reruns relevant tests
+- Provides coverage reports when configured
+- Includes `@testing-library/react` for component testing
+
+```json package.json
+{
+  "scripts": {
+    "test": "react-scripts test"
+  }
+}
+```
+
+<Info>
+By default, tests run in watch mode during development. In CI environments, you can run `CI=true npm test` to run tests once without watching.
+</Info>
+
+### Ejecting (Advanced)
+
+```bash
+npm run eject
+```
+
+<Warning>
+**This is a one-way operation. Once you eject, you can't go back!**
+
+Ejecting copies all configuration files and dependencies (webpack, Babel, ESLint, etc.) into your project, giving you full control. Only eject if you need to customize the build configuration beyond what Create React App provides.
+</Warning>
+
+```json package.json
+{
+  "scripts": {
+    "eject": "react-scripts eject"
+  }
+}
+```
+
+## Environment Variables
+
+Create React App supports environment variables for configuring your application across different environments.
+
+### Creating Environment Files
+
+<Steps>
+  <Step title="Create environment files">
+    Create the following files in your project root:
+    
+    - `.env` - Default environment variables
+    - `.env.local` - Local overrides (not committed to git)
+    - `.env.development` - Development-specific variables
+    - `.env.production` - Production-specific variables
+  </Step>
+  
+  <Step title="Define variables with REACT_APP_ prefix">
+    All custom environment variables must start with `REACT_APP_`:
+    
+    ```bash .env
+    REACT_APP_CO2_API_URL=https://co2-api.vercel.app/api/co2
+    REACT_APP_POLLING_INTERVAL=5000
+    REACT_APP_MAX_DATA_POINTS=10
+    ```
+  </Step>
+  
+  <Step title="Access variables in your code">
+    Use `process.env` to access the variables:
+    
+    ```javascript src/components/CO2Dashboard.js
+    const API_URL = process.env.REACT_APP_CO2_API_URL || "https://co2-api.vercel.app/api/co2";
+    const POLLING_INTERVAL = process.env.REACT_APP_POLLING_INTERVAL || 5000;
+    const MAX_DATA_POINTS = process.env.REACT_APP_MAX_DATA_POINTS || 10;
+    ```
+  </Step>
+</Steps>
+
+### Built-in Environment Variables
+
+Create React App provides several built-in environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `NODE_ENV` | Set to `development`, `production`, or `test` |
+| `PUBLIC_URL` | The public URL where the app is served from |
+| `FAST_REFRESH` | Enable/disable Fast Refresh (default: true) |
+
+<CodeGroup>
+
+```javascript Development check
+if (process.env.NODE_ENV === 'development') {
+  console.log('Running in development mode');
+}
+```
+
+```javascript Production check
+if (process.env.NODE_ENV === 'production') {
+  // Enable production analytics
+  initAnalytics();
+}
+```
+
+</CodeGroup>
+
+### Environment File Priority
+
+Environment files are loaded in the following order (higher priority overrides lower):
+
+1. `.env.local` (loaded for all environments except test)
+2. `.env.development`, `.env.production`, or `.env.test` (based on NODE_ENV)
+3. `.env`
+
+<Note>
+`.env.local` should not be committed to version control. Add it to your `.gitignore` file.
+</Note>
+
+## Browser Compatibility
+
+The application's browser support is configured in the `browserslist` field of `package.json`:
+
+```json package.json
+{
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+```
+
+### Production Targets
+
+The production build targets:
+- Browsers with more than 0.2% market share
+- Browsers that are not "dead" (officially supported)
+- All browsers except Opera Mini
+
+<Info>
+These settings ensure wide compatibility while excluding browsers that don't support modern web features or have significant technical limitations.
+</Info>
+
+### Development Targets
+
+Development builds target:
+- Latest Chrome version
+- Latest Firefox version  
+- Latest Safari version
+
+This allows developers to use the latest browser features during development without worrying about polyfills.
+
+### Checking Browser Support
+
+You can check which browsers are targeted by running:
+
+```bash
+npx browserslist
+```
+
+This will display the full list of browsers matched by your configuration.
+
+## Dependencies
+
+The application uses the following core dependencies:
+
+```json package.json
+{
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.7.7",
+    "chart.js": "^4.4.6",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.3.1",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  }
+}
+```
+
+### Key Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `react` & `react-dom` | Core React framework (v18.3.1) |
+| `axios` | HTTP client for API requests |
+| `chart.js` | Charting library for data visualization |
+| `react-chartjs-2` | React wrapper for Chart.js |
+| `react-scripts` | Create React App build scripts |
+| `web-vitals` | Performance metrics tracking |
+
+### Testing Libraries
+
+- `@testing-library/react` - Testing utilities for React components
+- `@testing-library/jest-dom` - Custom Jest matchers for DOM nodes
+- `@testing-library/user-event` - Simulating user interactions in tests
+
+## Development vs Production
+
+Understanding the differences between development and production builds:
+
+### Development Mode
+
+```bash
+npm start
+```
+
+**Characteristics:**
+- Unminified code with source maps
+- Helpful error messages and warnings
+- Hot module replacement (HMR)
+- React Developer Tools support
+- Slower performance (optimizations disabled)
+- Larger bundle size
+- Development API endpoints (if configured)
+
+<CodeGroup>
+
+```javascript Environment detection
+if (process.env.NODE_ENV === 'development') {
+  // Enable detailed logging
+  console.log('CO2 data:', data);
+  
+  // Use local API during development
+  const API_URL = 'http://localhost:3001/api/co2';
+}
+```
+
+</CodeGroup>
+
+### Production Mode
+
+```bash
+npm run build
+```
+
+**Characteristics:**
+- Minified and optimized code
+- Source maps (optional)
+- Error boundaries for graceful error handling
+- Performance optimizations enabled
+- Smaller bundle size (code splitting)
+- Production API endpoints
+- Service worker for PWA caching
+
+<CodeGroup>
+
+```javascript Production configuration
+if (process.env.NODE_ENV === 'production') {
+  // Disable console logs
+  console.log = () => {};
+  
+  // Use production API
+  const API_URL = 'https://co2-api.vercel.app/api/co2';
+}
+```
+
+</CodeGroup>
+
+## Port Configuration
+
+By default, the development server runs on port 3000. To use a different port:
+
+### Option 1: Environment Variable
+
+```bash
+PORT=3001 npm start
+```
+
+### Option 2: .env File
+
+```bash .env
+PORT=3001
+```
+
+<Note>
+On Windows, use `set PORT=3001 && npm start` or create a `.env` file instead.
+</Note>
+
+## HTTPS in Development
+
+To run the development server with HTTPS:
+
+```bash
+HTTPS=true npm start
+```
+
+Or in your `.env` file:
+
+```bash .env
+HTTPS=true
+```
+
+<Warning>
+This will use a self-signed certificate, which browsers will warn about. This is normal for development environments.
+</Warning>
+
+## Progressive Web App (PWA) Configuration
+
+The application includes PWA support through Create React App's service worker integration.
+
+### Enabling PWA Features
+
+To enable offline functionality and installation:
+
+1. The production build automatically generates a service worker
+2. Users can install the app on their device
+3. The app works offline using cached data
+
+<Info>
+PWA features are only active in production builds. The service worker is not registered during development.
+</Info>
+
+### Manifest Configuration
+
+The PWA manifest is located at `public/manifest.json` and controls how the app appears when installed:
+
+```json public/manifest.json
+{
+  "short_name": "CO2 Monitor",
+  "name": "CO2 Real-Time Monitor",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Setup" icon="plug" href="/configuration/api-setup">
+    Configure the API endpoint for your data source
+  </Card>
+  <Card title="Dashboard Component" icon="chart-line" href="/components/dashboard">
+    Learn about the dashboard component and its features
+  </Card>
+</CardGroup>

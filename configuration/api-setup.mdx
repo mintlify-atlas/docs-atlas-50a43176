@@ -1,0 +1,285 @@
+---
+title: "API Setup"
+description: "Configure the external CO2 data API endpoint and polling behavior"
+---
+
+## Overview
+
+The CO2 Monitor application fetches real-time CO2 data from an external API endpoint. This page explains how the API integration works, the expected data format, and how to configure or modify the API endpoint for your deployment.
+
+## Default API Endpoint
+
+The application uses the following API endpoint by default:
+
+```
+https://co2-api.vercel.app/api/co2
+```
+
+<Info>
+This is a Node.js API deployed on Vercel that provides real-time CO2 measurements with timestamps.
+</Info>
+
+## API Implementation
+
+The API call is implemented in the `CO2Dashboard` component using axios. Here's the actual implementation from the source code:
+
+```javascript src/components/CO2Dashboard.js
+const fetchData = async () => {
+    try {
+        const response = await axios.get("https://co2-api.vercel.app/api/co2");
+        const { co2, timestamp } = response.data;
+
+        console.log("Nuevo dato recibido:", { timestamp, co2 });
+
+        setLatestCO2(co2);
+        setCo2Data((prevData) => {
+            const newData = [...prevData, co2];
+            if (newData.length > 10) newData.shift();
+            return newData;
+        });
+
+        setTimestamps((prevTimestamps) => {
+            const newTimestamps = [...prevTimestamps, formatTime(timestamp)];
+            if (newTimestamps.length > 10) newTimestamps.shift();
+            return newTimestamps;
+        });
+    } catch (error) {
+        console.error("Error fetching CO2 data:", error);
+    }
+};
+```
+
+## API Response Format
+
+The API must return a JSON response with the following structure:
+
+```json
+{
+  "co2": 450,
+  "timestamp": "13/03/26, 10:30 A.M."
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `co2` | Number | CO2 concentration in parts per million (ppm) |
+| `timestamp` | String | Timestamp in format `DD/MM/YY, HH:MM A.M./P.M.` |
+
+<Note>
+The timestamp format uses a 12-hour clock with AM/PM indicators. The application includes a `formatTime` function that converts this format to a 24-hour display format for the charts.
+</Note>
+
+## Polling Configuration
+
+The application polls the API at regular intervals to fetch new data:
+
+```javascript src/components/CO2Dashboard.js
+const intervalId = setInterval(fetchData, 5000);
+```
+
+<Info>
+**Default polling interval:** 5000 milliseconds (5 seconds)
+</Info>
+
+### Modifying the Polling Interval
+
+To change the polling frequency, update the interval value in `CO2Dashboard.js`:
+
+<Steps>
+  <Step title="Open the CO2Dashboard component">
+    Navigate to `src/components/CO2Dashboard.js`
+  </Step>
+  
+  <Step title="Locate the setInterval call">
+    Find line 63 where `setInterval` is called with the `fetchData` function
+  </Step>
+  
+  <Step title="Modify the interval value">
+    Change `5000` to your desired interval in milliseconds:
+    
+    ```javascript
+    // Poll every 10 seconds instead of 5
+    const intervalId = setInterval(fetchData, 10000);
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+Setting a very short polling interval (< 1000ms) may cause performance issues and increase server load. Consider the capabilities of your API endpoint when adjusting this value.
+</Warning>
+
+## Changing the API Endpoint
+
+If you want to use a different CO2 data source, you'll need to modify the API URL in the component.
+
+<Steps>
+  <Step title="Open the component file">
+    Open `src/components/CO2Dashboard.js` in your code editor
+  </Step>
+  
+  <Step title="Find the axios.get call">
+    Locate the API call around line 41:
+    
+    ```javascript
+    const response = await axios.get("https://co2-api.vercel.app/api/co2");
+    ```
+  </Step>
+  
+  <Step title="Replace the URL">
+    Change the URL to your custom endpoint:
+    
+    ```javascript
+    const response = await axios.get("https://your-api-domain.com/api/co2");
+    ```
+  </Step>
+  
+  <Step title="Verify response format">
+    Ensure your API returns data in the expected format with `co2` and `timestamp` fields
+  </Step>
+</Steps>
+
+### Using Environment Variables
+
+For better configurability across different environments, consider moving the API URL to an environment variable:
+
+<CodeGroup>
+
+```javascript .env
+REACT_APP_CO2_API_URL=https://co2-api.vercel.app/api/co2
+```
+
+```javascript src/components/CO2Dashboard.js
+const response = await axios.get(process.env.REACT_APP_CO2_API_URL);
+```
+
+</CodeGroup>
+
+<Note>
+Environment variables in Create React App must be prefixed with `REACT_APP_` to be accessible in the application.
+</Note>
+
+## Error Handling
+
+The application includes basic error handling for API failures:
+
+```javascript src/components/CO2Dashboard.js
+catch (error) {
+    console.error("Error fetching CO2 data:", error);
+}
+```
+
+### Current Behavior
+
+When an API call fails:
+- The error is logged to the browser console
+- The application continues to display the last successfully received data
+- The polling mechanism continues attempting to fetch new data
+
+### Enhancing Error Handling
+
+Consider implementing these enhancements for production use:
+
+<CodeGroup>
+
+```javascript User notifications
+catch (error) {
+    console.error("Error fetching CO2 data:", error);
+    setErrorMessage("Unable to fetch CO2 data. Retrying...");
+    setTimeout(() => setErrorMessage(null), 3000);
+}
+```
+
+```javascript Retry logic with backoff
+let retryCount = 0;
+const maxRetries = 3;
+
+catch (error) {
+    console.error("Error fetching CO2 data:", error);
+    retryCount++;
+    
+    if (retryCount >= maxRetries) {
+        clearInterval(intervalId);
+        setErrorMessage("Connection lost. Please refresh the page.");
+    }
+}
+```
+
+```javascript Network status detection
+catch (error) {
+    if (!navigator.onLine) {
+        setErrorMessage("No internet connection");
+    } else {
+        console.error("Error fetching CO2 data:", error);
+        setErrorMessage("Failed to fetch data from API");
+    }
+}
+```
+
+</CodeGroup>
+
+## Data Management
+
+The application maintains a rolling window of the most recent data points:
+
+```javascript src/components/CO2Dashboard.js
+if (newData.length > 10) newData.shift();
+```
+
+<Info>
+By default, only the **last 10 data points** are kept in memory and displayed on the chart. Older data points are automatically removed to prevent memory issues during long-running sessions.
+</Info>
+
+### Adjusting Data History
+
+To display more historical data, modify the length check:
+
+```javascript
+// Display last 20 data points instead of 10
+if (newData.length > 20) newData.shift();
+
+// Also update the timestamps array
+if (newTimestamps.length > 20) newTimestamps.shift();
+```
+
+<Warning>
+Increasing the data history window will increase memory usage and may affect chart rendering performance, especially on mobile devices.
+</Warning>
+
+## CORS Considerations
+
+If you're connecting to a custom API endpoint, ensure that:
+
+1. Your API server allows CORS requests from your application's domain
+2. The API includes appropriate CORS headers:
+   - `Access-Control-Allow-Origin: *` (or your specific domain)
+   - `Access-Control-Allow-Methods: GET`
+
+<Note>
+The default API endpoint (`https://co2-api.vercel.app/api/co2`) already has CORS properly configured for public access.
+</Note>
+
+## Testing the API
+
+You can test the API endpoint directly using curl or your browser:
+
+```bash
+curl https://co2-api.vercel.app/api/co2
+```
+
+Expected response:
+```json
+{"co2":450,"timestamp":"13/03/26, 10:30 A.M."}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Configuration" icon="gear" href="/configuration/environment">
+    Configure environment variables for different deployment scenarios
+  </Card>
+  <Card title="Dashboard Component" icon="chart-line" href="/components/dashboard">
+    Learn more about the CO2Dashboard component implementation
+  </Card>
+</CardGroup>

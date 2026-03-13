@@ -1,0 +1,257 @@
+---
+title: 'CO2Dashboard'
+description: 'Main dashboard component for real-time CO2 monitoring and visualization'
+---
+
+## Overview
+
+The `CO2Dashboard` component is the core of the CO2 monitoring application. It fetches real-time CO2 data from the API, displays the current reading, and visualizes historical data using a line chart.
+
+<Note>
+The dashboard automatically updates every 5 seconds to fetch new CO2 readings from the backend API.
+</Note>
+
+## Component Structure
+
+The component is located at `src/components/CO2Dashboard.js` and uses React hooks for state management and Chart.js for data visualization.
+
+```javascript
+import React, { useEffect, useState } from "react";
+import { Line } from "react-chartjs-2";
+import axios from "axios";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import './CO2Dashboard.css';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+```
+
+## State Management
+
+The component maintains three pieces of state to manage CO2 data:
+
+<ParamField path="co2Data" type="array">
+  Array of CO2 values (in ppm). Maintains up to 10 most recent readings. When new data arrives, the oldest value is removed if the array exceeds 10 items.
+</ParamField>
+
+<ParamField path="timestamps" type="array">
+  Array of formatted timestamp strings corresponding to each CO2 reading. Also limited to 10 items to match the `co2Data` array.
+</ParamField>
+
+<ParamField path="latestCO2" type="number | null">
+  The most recent CO2 reading in parts per million (ppm). Used to display the current value prominently. Initially `null` until the first data fetch completes.
+</ParamField>
+
+## State Initialization
+
+```javascript
+function CO2Dashboard() {
+    const [co2Data, setCo2Data] = useState([]);
+    const [timestamps, setTimestamps] = useState([]);
+    const [latestCO2, setLatestCO2] = useState(null);
+    // ...
+}
+```
+
+## formatTime Utility Function
+
+The `formatTime` function converts timestamps from the API's custom format into a standardized 24-hour time format for display.
+
+```javascript
+const formatTime = (timestamp) => {
+    const [datePart, timePartWithPeriod] = timestamp.split(", ");
+    const [day, month, year] = datePart.split("/");
+    const [timePart, period] = timePartWithPeriod.split(" ");
+    let [hours, minutes] = timePart.split(":");
+    if (period.toLowerCase() === "p.m." && hours !== "12") {
+        hours = parseInt(hours) + 12;
+    } else if (period.toLowerCase() === "a.m." && hours === "12") {
+        hours = "00";
+    }
+    const isoDate = `20${year}-${month}-${day}T${hours}:${minutes}:00`;
+    const date = new Date(isoDate);
+    if (isNaN(date)) {
+        console.error("Fecha no válida:", timestamp);
+        return "Invalid Date";
+    }
+    return date.toLocaleTimeString('es-MX', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+};
+```
+
+<Tip>
+The function handles AM/PM conversion to 24-hour format and uses Spanish locale (`es-MX`) for time formatting.
+</Tip>
+
+### Input Format
+The API returns timestamps in the format: `DD/MM/YY, HH:MM A.M./P.M.`
+
+### Output Format
+Converted to 24-hour format: `HH:MM:SS`
+
+## Data Fetching
+
+The component uses the `fetchData` async function within a `useEffect` hook to poll the API every 5 seconds.
+
+```javascript
+useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const response = await axios.get("https://co2-api.vercel.app/api/co2");
+            const { co2, timestamp } = response.data;
+
+            console.log("Nuevo dato recibido:", { timestamp, co2 });
+
+            setLatestCO2(co2);
+            setCo2Data((prevData) => {
+                const newData = [...prevData, co2];
+                if (newData.length > 10) newData.shift();
+                return newData;
+            });
+
+            setTimestamps((prevTimestamps) => {
+                const newTimestamps = [...prevTimestamps, formatTime(timestamp)];
+                if (newTimestamps.length > 10) newTimestamps.shift();
+                return newTimestamps;
+            });
+        } catch (error) {
+            console.error("Error fetching CO2 data:", error);
+        }
+    };
+
+    const intervalId = setInterval(fetchData, 5000);
+    return () => clearInterval(intervalId);
+}, []);
+```
+
+### Fetch Behavior
+
+<ResponseField name="Polling Interval" type="5000ms">
+  The dashboard fetches new data every 5 seconds using `setInterval`.
+</ResponseField>
+
+<ResponseField name="Data Limit" type="10 readings">
+  Only the 10 most recent readings are kept in memory. Older values are automatically removed using `shift()`.
+</ResponseField>
+
+<ResponseField name="Error Handling" type="console.error">
+  Network errors are caught and logged to the console without crashing the application.
+</ResponseField>
+
+## Chart Data Structure
+
+The component prepares data for the Chart.js Line component:
+
+```javascript
+const data = {
+    labels: timestamps,
+    datasets: [
+        {
+            label: "Niveles de CO2 (ppm)",
+            data: co2Data,
+            fill: false,
+            backgroundColor: "rgba(75,192,192,1)",
+            borderColor: "rgba(75,192,192,0.2)",
+        },
+    ],
+};
+```
+
+<ParamField path="labels" type="array">
+  X-axis labels using the `timestamps` array.
+</ParamField>
+
+<ParamField path="datasets[0].label" type="string">
+  Chart legend label: "Niveles de CO2 (ppm)".
+</ParamField>
+
+<ParamField path="datasets[0].data" type="array">
+  Y-axis data points using the `co2Data` array.
+</ParamField>
+
+<ParamField path="datasets[0].fill" type="boolean">
+  Set to `false` to prevent area fill under the line.
+</ParamField>
+
+## Component Rendering
+
+The component renders a header with the current reading and a chart container:
+
+```javascript
+return (
+    <div className="dashboard">
+        <h2>Medición en Tiempo Real</h2>
+        <h1>{latestCO2 ? `${latestCO2} ppm` : "Cargando..."}</h1>
+        <div className="chart-container">
+            <Line data={data} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: "#555" }, title: { display: true, text: 'Tiempo' } },
+                    y: { ticks: { color: "#555" }, title: { display: true, text: 'CO2 (ppm)' } },
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.parsed.y} ppm`
+                        }
+                    }
+                }
+            }} />
+        </div>
+    </div>
+);
+```
+
+### Render Elements
+
+<Card title="Current Reading Display" icon="gauge">
+  The `h1` element displays the latest CO2 value with "ppm" units, or "Cargando..." while waiting for the first data fetch.
+</Card>
+
+<Card title="Chart Container" icon="chart-line">
+  The chart is wrapped in a `chart-container` div for CSS styling and responsive behavior.
+</Card>
+
+## Usage
+
+The dashboard is imported and used in the main App component:
+
+```javascript
+import CO2Dashboard from "./components/CO2Dashboard";
+
+function App() {
+  return (
+    <div>
+      <Header />
+      <CO2Dashboard />
+    </div>
+  );
+}
+```
+
+## API Endpoint
+
+<ResponseField name="URL" type="string">
+  `https://co2-api.vercel.app/api/co2`
+</ResponseField>
+
+<ResponseField name="Method" type="GET">
+  Simple GET request with no authentication required.
+</ResponseField>
+
+<ResponseField name="Response Format" type="JSON">
+  ```json
+  {
+    "co2": 450,
+    "timestamp": "13/03/26, 10:30 A.M."
+  }
+  ```
+</ResponseField>
+
+## Styling
+
+The component uses `CO2Dashboard.css` for styling. The CSS file contains responsive styles for the dashboard container and chart visualization.

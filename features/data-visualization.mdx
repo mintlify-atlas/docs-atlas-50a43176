@@ -1,0 +1,286 @@
+---
+title: 'Data Visualization'
+description: 'Interactive charts for visualizing CO2 trends using Chart.js'
+---
+
+The CO2 Monitor features a powerful data visualization system built on Chart.js, providing real-time graphical representation of CO2 levels in your greenhouse. The interactive line chart makes it easy to spot trends and patterns in your environmental data.
+
+## Chart.js Integration
+
+The application uses Chart.js, a flexible and widely-adopted charting library, to render responsive and interactive visualizations.
+
+### Required Dependencies
+
+The dashboard imports Chart.js components and registers necessary modules:
+
+```javascript
+import { Line } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
+         LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, 
+                 LineElement, Title, Tooltip, Legend);
+```
+
+<Info>
+Chart.js uses a modular architecture. Only the components needed for the line chart are imported and registered, keeping the bundle size optimized.
+</Info>
+
+### Chart Registration
+
+The `ChartJS.register()` call activates the following components:
+
+- **CategoryScale**: Handles the X-axis time labels
+- **LinearScale**: Manages the Y-axis numeric scale for CO2 values
+- **PointElement**: Renders individual data points on the line
+- **LineElement**: Draws the connecting lines between points
+- **Title**: Enables chart and axis titles
+- **Tooltip**: Provides interactive hover information
+- **Legend**: Displays the dataset label
+
+## Line Chart Component
+
+The visualization uses the React Chart.js `Line` component with custom configuration:
+
+```javascript
+<Line data={data} options={{
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+        x: { 
+            ticks: { color: "#555" }, 
+            title: { display: true, text: 'Tiempo' } 
+        },
+        y: { 
+            ticks: { color: "#555" }, 
+            title: { display: true, text: 'CO2 (ppm)' } 
+        },
+    },
+    plugins: {
+        tooltip: {
+            callbacks: {
+                label: (context) => `${context.parsed.y} ppm`
+            }
+        }
+    }
+}} />
+```
+
+The chart is rendered within a responsive container:
+
+```javascript
+<div className="chart-container">
+    <Line data={data} options={{...}} />
+</div>
+```
+
+## Chart Data Structure
+
+The data object follows Chart.js's standard format with labels and datasets:
+
+```javascript
+const data = {
+    labels: timestamps,
+    datasets: [
+        {
+            label: "Niveles de CO2 (ppm)",
+            data: co2Data,
+            fill: false,
+            backgroundColor: "rgba(75,192,192,1)",
+            borderColor: "rgba(75,192,192,0.2)",
+        },
+    ],
+};
+```
+
+### Data Properties
+
+<CardGroup cols={2}>
+  <Card title="labels" icon="tag">
+    Array of formatted timestamps for the X-axis
+  </Card>
+  <Card title="data" icon="chart-line">
+    Array of CO2 readings (in ppm) for the Y-axis
+  </Card>
+  <Card title="fill" icon="fill">
+    Set to false to render only the line without area fill
+  </Card>
+  <Card title="colors" icon="palette">
+    Teal color scheme with solid points and semi-transparent line
+  </Card>
+</CardGroup>
+
+## 10-Point Rolling Window
+
+The chart maintains a rolling window of the most recent 10 data points, creating a focused view of recent CO2 trends without cluttering the display.
+
+### Implementation
+
+```javascript
+setCo2Data((prevData) => {
+    const newData = [...prevData, co2];
+    if (newData.length > 10) newData.shift();
+    return newData;
+});
+
+setTimestamps((prevTimestamps) => {
+    const newTimestamps = [...prevTimestamps, formatTime(timestamp)];
+    if (newTimestamps.length > 10) newTimestamps.shift();
+    return newTimestamps;
+});
+```
+
+<Note>
+The rolling window automatically removes the oldest data point when the 11th point arrives. With a 5-second refresh rate, the chart displays approximately 50 seconds of historical data.
+</Note>
+
+### Benefits of the Rolling Window
+
+- **Focused Analysis**: Shows recent trends without overwhelming the viewer
+- **Consistent Scale**: Keeps the chart readable by limiting the number of data points
+- **Performance**: Reduces rendering overhead by capping the dataset size
+- **Real-Time Feel**: The sliding window creates a dynamic, live-updating visualization
+
+## Chart Configuration Options
+
+### Responsive Design
+
+```javascript
+responsive: true,
+maintainAspectRatio: false,
+```
+
+- **responsive: true** - Chart automatically resizes to fit its container
+- **maintainAspectRatio: false** - Allows the chart to fill the full height of the container
+
+<Tip>
+The chart container uses CSS to define a fixed height, which works in conjunction with `maintainAspectRatio: false` to create a consistent viewing experience across all devices.
+</Tip>
+
+### Axis Configuration
+
+#### X-Axis (Time)
+
+```javascript
+x: { 
+    ticks: { color: "#555" }, 
+    title: { display: true, text: 'Tiempo' } 
+}
+```
+
+- Displays timestamps from the last 10 readings
+- Gray text color (#555) for readability
+- Title "Tiempo" (Time) for clarity
+
+#### Y-Axis (CO2 Levels)
+
+```javascript
+y: { 
+    ticks: { color: "#555" }, 
+    title: { display: true, text: 'CO2 (ppm)' } 
+}
+```
+
+- Automatically scales based on the data range
+- Shows CO2 measurements in parts per million
+- Title "CO2 (ppm)" indicates the unit of measurement
+
+### Tooltip Configuration
+
+The tooltip has been customized to show CO2 values with units:
+
+```javascript
+plugins: {
+    tooltip: {
+        callbacks: {
+            label: (context) => `${context.parsed.y} ppm`
+        }
+    }
+}
+```
+
+When users hover over any data point, they see the exact CO2 reading formatted as "XXX ppm".
+
+<Info>
+The tooltip callback function accesses the Y-axis value via `context.parsed.y` and appends the "ppm" unit for clear communication.
+</Info>
+
+## Styling and Layout
+
+### Chart Container
+
+The chart is wrapped in a responsive container with the following CSS:
+
+```css
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    max-width: 1000px;
+    margin: 20px 0;
+}
+```
+
+### Responsive Breakpoints
+
+The chart adapts to different screen sizes:
+
+**Tablet (≤768px):**
+```css
+.chart-container {
+    height: 300px;
+    width: auto;
+}
+```
+
+**Mobile (≤480px):**
+```css
+.chart-container {
+    height: 250px;
+    width: auto;
+}
+```
+
+<Note>
+The responsive design ensures optimal viewing on devices ranging from desktop monitors to mobile phones.
+</Note>
+
+## Color Scheme
+
+The visualization uses a professional teal color scheme:
+
+- **Data Points**: `rgba(75,192,192,1)` - Solid teal
+- **Line Border**: `rgba(75,192,192,0.2)` - Semi-transparent teal
+- **Axis Text**: `#555` - Medium gray
+- **Headings**: `#00796b` - Dark teal
+
+This color palette provides:
+- High contrast for readability
+- Professional appearance
+- Clear visual hierarchy
+- Reduced eye strain during extended monitoring
+
+## Accessibility Features
+
+The chart includes several accessibility considerations:
+
+- Clear axis labels with descriptive titles
+- High-contrast colors between data and background
+- Tooltips for detailed point-level information
+- Responsive sizing for various screen readers
+- Semantic HTML structure
+
+## Use Cases
+
+The data visualization system excels at:
+
+- **Trend Analysis**: Quickly identify whether CO2 levels are rising, falling, or stable
+- **Anomaly Detection**: Spot unusual spikes or drops in readings
+- **Pattern Recognition**: Observe cyclical patterns in CO2 levels throughout the day
+- **Decision Support**: Use visual data to determine when to adjust ventilation or CO2 injection
+- **Reporting**: Screenshot charts for documentation and reports
+- **Real-Time Monitoring**: Watch live updates as new data points appear
+
+<Tip>
+For longer historical analysis, consider exporting the data to a spreadsheet or database. The current 10-point window is optimized for immediate operational decisions.
+</Tip>

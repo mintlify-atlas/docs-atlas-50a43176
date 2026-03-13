@@ -1,0 +1,351 @@
+---
+title: 'Chart Component'
+description: 'Line chart visualization using Chart.js and react-chartjs-2'
+---
+
+## Overview
+
+The CO2 Monitor application uses the `Line` chart component from `react-chartjs-2` to visualize CO2 levels over time. This page documents the chart configuration, data structure, and customization options used in the application.
+
+<Note>
+The chart is rendered within the `CO2Dashboard` component and automatically updates as new data arrives from the API.
+</Note>
+
+## Required Imports
+
+To use Chart.js with React, you need to import and register the required components:
+
+```javascript
+import { Line } from "react-chartjs-2";
+import { 
+    Chart as ChartJS, 
+    CategoryScale, 
+    LinearScale, 
+    PointElement, 
+    LineElement, 
+    Title, 
+    Tooltip, 
+    Legend 
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+```
+
+### Import Breakdown
+
+<ParamField path="Line" type="Component">
+  The Line chart component from react-chartjs-2 library.
+</ParamField>
+
+<ParamField path="ChartJS" type="Core">
+  The main Chart.js library, imported with an alias to avoid naming conflicts.
+</ParamField>
+
+<ParamField path="CategoryScale" type="Scale">
+  Scale for categorical data on the x-axis (timestamps in this case).
+</ParamField>
+
+<ParamField path="LinearScale" type="Scale">
+  Linear scale for numerical data on the y-axis (CO2 values).
+</ParamField>
+
+<ParamField path="PointElement" type="Element">
+  Renders individual data points on the line.
+</ParamField>
+
+<ParamField path="LineElement" type="Element">
+  Renders the line connecting data points.
+</ParamField>
+
+<ParamField path="Title" type="Plugin">
+  Plugin for chart and axis titles.
+</ParamField>
+
+<ParamField path="Tooltip" type="Plugin">
+  Plugin for interactive tooltips when hovering over data points.
+</ParamField>
+
+<ParamField path="Legend" type="Plugin">
+  Plugin for displaying the chart legend.
+</ParamField>
+
+<Tip>
+Chart.js uses a tree-shaking approach, so you must explicitly register only the components you need. This keeps the bundle size small.
+</Tip>
+
+## Chart Registration
+
+Before using any Chart.js components, you must register them:
+
+```javascript
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+```
+
+<Note>
+Registration should happen once, typically at the component level or in a separate configuration file.
+</Note>
+
+## Data Structure
+
+The chart receives data through the `data` prop, which follows the Chart.js dataset format:
+
+```javascript
+const data = {
+    labels: timestamps,
+    datasets: [
+        {
+            label: "Niveles de CO2 (ppm)",
+            data: co2Data,
+            fill: false,
+            backgroundColor: "rgba(75,192,192,1)",
+            borderColor: "rgba(75,192,192,0.2)",
+        },
+    ],
+};
+```
+
+### Data Properties
+
+<ParamField path="labels" type="array">
+  Array of x-axis labels. In the CO2 Monitor, this contains formatted timestamps like `["10:30:00", "10:30:05", "10:30:10", ...]`.
+</ParamField>
+
+<ParamField path="datasets" type="array">
+  Array of dataset objects. The CO2 Monitor uses a single dataset for CO2 readings.
+</ParamField>
+
+<ParamField path="datasets[0].label" type="string">
+  Legend label for the dataset: "Niveles de CO2 (ppm)" (CO2 Levels in ppm).
+</ParamField>
+
+<ParamField path="datasets[0].data" type="array">
+  Array of numerical values corresponding to each label. Contains CO2 readings in ppm, e.g., `[450, 455, 452, ...]`.
+</ParamField>
+
+<ParamField path="datasets[0].fill" type="boolean">
+  When `false`, prevents filling the area under the line. Set to `true` to create an area chart effect.
+</ParamField>
+
+<ParamField path="datasets[0].backgroundColor" type="string">
+  Color of the data points: `"rgba(75,192,192,1)"` (teal, fully opaque).
+</ParamField>
+
+<ParamField path="datasets[0].borderColor" type="string">
+  Color of the line connecting points: `"rgba(75,192,192,0.2)"` (teal, 20% opacity).
+</ParamField>
+
+## Chart Options
+
+The chart is configured with the `options` prop to control appearance and behavior:
+
+```javascript
+<Line data={data} options={{
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+        x: { 
+            ticks: { color: "#555" }, 
+            title: { display: true, text: 'Tiempo' } 
+        },
+        y: { 
+            ticks: { color: "#555" }, 
+            title: { display: true, text: 'CO2 (ppm)' } 
+        },
+    },
+    plugins: {
+        tooltip: {
+            callbacks: {
+                label: (context) => `${context.parsed.y} ppm`
+            }
+        }
+    }
+}} />
+```
+
+### Responsive Options
+
+<ParamField path="responsive" type="boolean">
+  Set to `true` to make the chart resize automatically when the browser window changes size.
+</ParamField>
+
+<ParamField path="maintainAspectRatio" type="boolean">
+  Set to `false` to allow the chart to fill its container without maintaining a fixed aspect ratio. This is useful when the container has a specific height.
+</ParamField>
+
+### Scale Configuration
+
+The `scales` object configures the x and y axes:
+
+#### X-Axis (Time)
+
+<ParamField path="scales.x.ticks.color" type="string">
+  Color of the x-axis tick labels: `"#555"` (dark gray).
+</ParamField>
+
+<ParamField path="scales.x.title.display" type="boolean">
+  Set to `true` to display the axis title.
+</ParamField>
+
+<ParamField path="scales.x.title.text" type="string">
+  X-axis title: `"Tiempo"` (Time in Spanish).
+</ParamField>
+
+#### Y-Axis (CO2 Values)
+
+<ParamField path="scales.y.ticks.color" type="string">
+  Color of the y-axis tick labels: `"#555"` (dark gray).
+</ParamField>
+
+<ParamField path="scales.y.title.display" type="boolean">
+  Set to `true` to display the axis title.
+</ParamField>
+
+<ParamField path="scales.y.title.text" type="string">
+  Y-axis title: `"CO2 (ppm)"` (CO2 in parts per million).
+</ParamField>
+
+### Tooltip Configuration
+
+The tooltip plugin is customized to display CO2 values with units:
+
+<ParamField path="plugins.tooltip.callbacks.label" type="function">
+  Custom function that formats the tooltip label. Takes a `context` object and returns a formatted string.
+  
+  ```javascript
+  label: (context) => `${context.parsed.y} ppm`
+  ```
+  
+  This displays values like "450 ppm" when hovering over data points.
+</ParamField>
+
+## Chart Updates
+
+The chart automatically updates when the `co2Data` or `timestamps` state arrays change. This happens every 5 seconds when new data is fetched:
+
+```javascript
+setCo2Data((prevData) => {
+    const newData = [...prevData, co2];
+    if (newData.length > 10) newData.shift();
+    return newData;
+});
+
+setTimestamps((prevTimestamps) => {
+    const newTimestamps = [...prevTimestamps, formatTime(timestamp)];
+    if (newTimestamps.length > 10) newTimestamps.shift();
+    return newTimestamps;
+});
+```
+
+<Card title="Real-Time Updates" icon="rotate">
+  As new CO2 readings arrive, they're added to the arrays. The oldest values are removed when the arrays exceed 10 items, creating a sliding window effect.
+</Card>
+
+<Card title="React Rendering" icon="react">
+  React automatically re-renders the chart when state changes, and Chart.js smoothly updates the visualization.
+</Card>
+
+## Complete Chart Implementation
+
+Here's how the chart is rendered within the CO2Dashboard component:
+
+```javascript
+return (
+    <div className="dashboard">
+        <h2>Medición en Tiempo Real</h2>
+        <h1>{latestCO2 ? `${latestCO2} ppm` : "Cargando..."}</h1>
+        <div className="chart-container">
+            <Line data={data} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: "#555" }, title: { display: true, text: 'Tiempo' } },
+                    y: { ticks: { color: "#555" }, title: { display: true, text: 'CO2 (ppm)' } },
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.parsed.y} ppm`
+                        }
+                    }
+                }
+            }} />
+        </div>
+    </div>
+);
+```
+
+The chart is wrapped in a `chart-container` div, which is styled in `CO2Dashboard.css` to control dimensions and layout.
+
+## Customization Examples
+
+### Change Chart Colors
+
+Modify the dataset colors to match your branding:
+
+```javascript
+{
+    label: "Niveles de CO2 (ppm)",
+    data: co2Data,
+    fill: false,
+    backgroundColor: "rgba(255,99,132,1)",  // Red points
+    borderColor: "rgba(255,99,132,0.5)",    // Red line
+}
+```
+
+### Enable Area Fill
+
+Create an area chart by setting `fill: true`:
+
+```javascript
+{
+    label: "Niveles de CO2 (ppm)",
+    data: co2Data,
+    fill: true,  // Fill area under the line
+    backgroundColor: "rgba(75,192,192,0.2)",
+    borderColor: "rgba(75,192,192,1)",
+}
+```
+
+### Adjust Data Window Size
+
+Change the number of visible data points by modifying the array length limit:
+
+```javascript
+// Show 20 points instead of 10
+if (newData.length > 20) newData.shift();
+```
+
+### Add Grid Lines
+
+Configure grid lines for better readability:
+
+```javascript
+scales: {
+    x: { 
+        grid: { color: 'rgba(200,200,200,0.3)' },
+        ticks: { color: "#555" }, 
+        title: { display: true, text: 'Tiempo' } 
+    },
+    y: { 
+        grid: { color: 'rgba(200,200,200,0.3)' },
+        ticks: { color: "#555" }, 
+        title: { display: true, text: 'CO2 (ppm)' } 
+    },
+}
+```
+
+## Performance Considerations
+
+<Tip>
+The chart is limited to 10 data points to maintain smooth performance. Rendering hundreds of points in real-time can cause performance issues on mobile devices.
+</Tip>
+
+<Note>
+Chart.js automatically optimizes rendering using canvas, which provides excellent performance for time-series data visualization.
+</Note>
+
+## Additional Resources
+
+- [Chart.js Documentation](https://www.chartjs.org/docs/latest/)
+- [react-chartjs-2 GitHub](https://github.com/reactchartjs/react-chartjs-2)
+- [Chart.js Line Chart Options](https://www.chartjs.org/docs/latest/charts/line.html)
